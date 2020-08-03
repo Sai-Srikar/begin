@@ -13,7 +13,7 @@ class CopyDocs{
                 method: 'POST',
                 url: 'https://api.integrator.io/v1' + path,
                 headers: {
-                    'Authorization': 'Bearer b39d7da2a6324f20b1e39500e2851229'
+                    'Authorization': 'Bearer {token here}'
                 },
                 json: json
             }, function (error, response, body) {
