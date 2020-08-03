@@ -1,7 +1,7 @@
 var request = require('request');
 var fs = require('fs');
 const { resolve } = require('path');
-class copyDocs{
+class CopyDocs{
     constructor(folderPath){
         this.folderPath = folderPath;
         this.mappingDictionary = new Map();
@@ -13,7 +13,7 @@ class copyDocs{
                 method: 'POST',
                 url: 'https://api.integrator.io/v1' + path,
                 headers: {
-                    'Authorization': 'Bearer {Bearer token here}'
+                    'Authorization': 'Bearer b39d7da2a6324f20b1e39500e2851229'
                 },
                 json: json
             }, function (error, response, body) {
@@ -32,6 +32,7 @@ class copyDocs{
         const importjson = JSON.parse(fs.readFileSync(this.folderPath + "/integration.json"));
         var id = importjson._id;
         this.intId=this.postMethod(integrationPath, importjson);
+        return this.intId;
     }
     async createConnections(){
         const connectionPath = "/connections";
@@ -55,17 +56,21 @@ class copyDocs{
         var foldername = this.folderPath
         var dict  = this.mappingDictionary
         var postMethod = this.postMethod;
+        var result=[];
         fs.readdir(foldername + exportPath, function (err, files) {
             if (err) {
                 console.error(err);
                 process.exit(1);
             }
-            files.forEach(function (file, index) {
+            files.forEach(async function (file, index) {
                 const exportsJson = JSON.parse(fs.readFileSync(foldername+exportPath+"/"+ file));
                 var id = exportsJson._id;
-                dict.set(id,postMethod(exportPath, exportsJson));
+                var newId=await postMethod(exportPath, exportsJson);
+                dict.set(id,newId);
+                await result.push(newId);
             })
         });
+        console.log(result);
     }
     async createImports(){
         const importsPath = "/imports";
@@ -114,5 +119,8 @@ class copyDocs{
     }
 }
 
-integration = new copyDocs("../../flows/test2/");
-integration.setup();
+var start=new CopyDocs('../../flows/test2/');
+start.createExports();
+
+// getCopydocs =(props)=> new CopyDocs(props);
+module.exports={CopyDocs}
