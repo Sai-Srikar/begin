@@ -1,4 +1,4 @@
-var perdon={
+var name={
     "firstName":"Simgamsetty",
     "lastName":"Sai Srikar",
     "age":"20",
@@ -40,7 +40,7 @@ class MetaDataParse{
 
     getKeyFields (jsonArray) {
         var keyFieldArray = []
-        for (x in jsonArray) {
+        for (var x in jsonArray) {
             keyFieldArray.push(x.getKeyField());
         }
         return keyFieldArray;
@@ -59,7 +59,7 @@ console.log(wer.getChannel());
 function groupObjectsBy(jsonArray, key) {
 var newJson={}
 
-    for(x in jsonArray)
+    for(var x in jsonArray)
     {
         
         if(newJson[jsonArray[x][key]])

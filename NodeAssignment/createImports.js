@@ -1,64 +1,21 @@
 const request = require('request');
+var fs=require('fs');
 
-var postData={
-    "name": "NodeI",
-    "responseTransform": {
-        "type": "expression",
-        "expression": {
-            "version": "1"
-        },
-        "version": "1"
-    },
-    "_connectionId": "5ebe7565d6af806b53e083c1",
-    "distributed": false,
-    "apiIdentifier": "i441308b88",
-    "ignoreExisting": true,
-    "mapping": {
-        "fields": [
-            {
-                "extract": "id",
-                "generate": "ProductCode"
+class createImport{
+    constructor(path){
+        this.path=path;
+        this.options={
+            url:'https://api.integrator.io/v1/imports',
+            headers:{
+                'Authorization':'Bearer {token here}'
             },
-            {
-                "extract": "title",
-                "generate": "Name"
-            },
-            {
-                "extract": "variants[*].taxable",
-                "generate": "IsActive"
-            }
-        ]
-    },
-    "salesforce": {
-        "operation": "insert",
-        "sObjectType": "Product2",
-        "api": "soap",
-        "idLookup": {
-            "whereClause": "(ProductCode = {{{string id}}})"
-        },
-        "removeNonSubmittableFields": false
-    },
-    "filter": {
-        "type": "expression",
-        "expression": {
-            "version": "1"
-        },
-        "version": "1"
-    },
-    "adaptorType": "SalesforceImport"
-}
+            json:{}
+        }
+    }
 
-const options={
-    url:'https://api.integrator.io/v1/imports',
-    headers:{
-        'Authorization':'Bearer {token here}'
-    },
-    json:postData
-}
-
-function callback(error,response,body){
+ callback(error,response,body){
     if(!error && response.statusCode ==201){
-        console.log(body)
+        console.log(body);
     }
     else
     {
@@ -66,5 +23,13 @@ function callback(error,response,body){
     }
 }
 
-request.post(options,callback);
+create(){
+    var data= fs.readFileSync(this.path);
+    this.options.json=JSON.parse(data);
+    request.post(this.options,callback);
+}
 
+}
+
+var start=new createImport('{file path here}');
+start.create();

@@ -1,12 +1,15 @@
 var request = require('request');
 var fs = require('fs');
 const { resolve } = require('path');
+
+
 class CopyDocs{
     constructor(folderPath){
         this.folderPath = folderPath;
         this.mappingDictionary = new Map();
         this.intId="No integration created";
     }
+    
     postMethod(path,json){
         return new Promise((resolve, reject) => {
             request({
@@ -18,21 +21,22 @@ class CopyDocs{
                 json: json
             }, function (error, response, body) {
                 if (!error && response.statusCode == 201) {
-                    resolve(body._id);
+                    resolve(body);
                 }
                 else{
-                    console.log(response.statusCode);
+                    console.log(response.body);
                     console.log(error);
                 }
             })
         });
     }
-    async createIntegration(){
+    createIntegration(callback){
         const integrationPath = "/integrations";
         const importjson = JSON.parse(fs.readFileSync(this.folderPath + "/integration.json"));
         var id = importjson._id;
-        this.intId=this.postMethod(integrationPath, importjson);
-        return this.intId;
+        var method=this.postMethod(integrationPath, importjson);
+        this.intId=method._id;
+        callback(method);
     }
     async createConnections(){
         const connectionPath = "/connections";
@@ -46,12 +50,13 @@ class CopyDocs{
             }
             files.forEach(function(file,index){
                 const connectionJson = JSON.parse(fs.readFileSync(foldername+connectionPath+"/"+file));
+                console.log(file);
                 var id = connectionJson._id;
                 dict.set(id,postMethod(connectionPath,connectionJson));
             })
         });
     }
-    async createExports() {
+     createExports(callback) {
         const exportPath = "/exports";
         var foldername = this.folderPath
         var dict  = this.mappingDictionary
@@ -65,14 +70,14 @@ class CopyDocs{
             files.forEach(async function (file, index) {
                 const exportsJson = JSON.parse(fs.readFileSync(foldername+exportPath+"/"+ file));
                 var id = exportsJson._id;
-                var newId=await postMethod(exportPath, exportsJson);
+                var method=await postMethod(exportPath, exportsJson);
+                var newId=method._id;
                 dict.set(id,newId);
-                await result.push(newId);
+                callback(method);
             })
         });
-        console.log(result);
     }
-    async createImports(){
+    async createImports(callback){
         const importsPath = "/imports";
         var foldername = this.folderPath
         var dict = this.mappingDictionary
@@ -82,15 +87,18 @@ class CopyDocs{
                 console.error(err);
                 process.exit(1);
             }
-            files.forEach(function (file, index) {
+            files.forEach(async function (file, index) {
                 const importsJson = JSON.parse(fs.readFileSync(foldername+importsPath+"/"+file));
-                // importsJson._connectionId = await dict.get(importsJson._connectionId);
+                importsJson._connectionId = await dict.get(importsJson._connectionId);
                 var id = importsJson._id;
-                dict.set(id, postMethod(importsPath, importsJson));
+                var method=postMethod(importsPath, importsJson);
+                var newId=method._id;
+                dict.set(id,newId);
+                callback(method);
             })
         });
     }
-    async createFlows(){
+    async createFlows(callback){
         const flowsPath = "/flows";
         var foldername = this.folderPath;
         var dict = this.mappingDictionary;
@@ -103,24 +111,48 @@ class CopyDocs{
             }
             files.forEach(async function (file, index) {
                 const flowsJson = JSON.parse(fs.readFileSync(foldername+flowsPath+"/"+file));
-                flowsJson.pageProcessors[0]._importId = await dict.get(flowsJson.pageProcessors[0]._importId);
-                flowsJson.pageGenerators[0]._exportId = await dict.get(flowsJson.pageGenerators[0]._exportId);
-                flowsJson._integrationId =integrationID;
-                postMethod(flowsPath, flowsJson);
+                try {
+                    var integrationResponse = await dict.get("_integrationId");
+                    flowsJson._integrationId = integrationResponse._id;
+                } catch (error) {
+                    console.log("Integration not processed");
+                }
+                try {
+                    var exportResponse = await dict.get(flowsJson.pageGenerators[0]._exportId);
+                    console.log(exportResponse)
+                    flowsJson.pageGenerators[0]._exportId = exportResponse._id;
+                } catch (error) {
+                    console.log(error)
+                    console.log("Export not processed");
+                }
+                try {
+                    console.log(dict);
+                    var importResponse = await dict.get(flowsJson.pageProcessors[0]._importId);
+                    console.log(importResponse)
+                    flowsJson.pageProcessors[0]._importId = importResponse._id;
+                } catch (error) {
+                    console.log(error)
+                    console.log("Import not processed");
+                }
+                var method = postMethod(flowsPath, flowsJson);
+                callback(method);
             })
         });
     }
+    doesNothingCallBack() {
+        //callback is only used for mocha testing
+    }
     setup() {
-        this.createIntegration();
-        // this.createConnections();
-        this.createExports();
-        this.createImports();
-        this.createFlows();
+        this.createIntegration(this.doesNothingCallBack);
+        this.createConnections();
+        this.createExports(this.doesNothingCallBack);
+        this.createImports(this.doesNothingCallBack);
+        this.createFlows(this.doesNothingCallBack);
     }
 }
 
-var start=new CopyDocs('../../flows/test2/');
-start.createExports();
+// var start=new CopyDocs('../../flows/test2/');
+// start.createConnections();
 
 // getCopydocs =(props)=> new CopyDocs(props);
 module.exports={CopyDocs}

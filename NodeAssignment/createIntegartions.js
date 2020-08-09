@@ -1,20 +1,21 @@
 const request = require('request');
+var fs=require('fs');
 
-var postData={
-    "name": "Node",
-}
+class createIntegration{
+    constructor(path){
+        this.path=path;
+        this.options={
+            url:'https://api.integrator.io/v1/integrations',
+            headers:{
+                'Authorization':'Bearer {token here}'
+            },
+            json:{}
+        }
+    }
 
-const options={
-    url:'https://api.integrator.io/v1/imports',
-    headers:{
-        'Authorization':'Bearer {token here}'
-    },
-    json:postData
-}
-
-function callback(error,response,body){
+ callback(error,response,body){
     if(!error && response.statusCode ==201){
-        console.log(body)
+        console.log(body);
     }
     else
     {
@@ -22,4 +23,13 @@ function callback(error,response,body){
     }
 }
 
-request.post(options,callback);
+create(){
+    var data= fs.readFileSync(this.path);
+    this.options.json=JSON.parse(data);
+    request.post(this.options,callback);
+}
+
+}
+
+var start=new createIntegration('{file path here}');
+start.create();

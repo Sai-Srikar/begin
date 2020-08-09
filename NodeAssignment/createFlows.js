@@ -1,19 +1,19 @@
 const request = require('request');
+var fs=require('fs');
 
-var postData={
-    "name":"Test Create",
-    '_integrationId':'5f16d543545ecc2a32483177'
-}
+class createFlow{
+    constructor(path){
+        this.path=path;
+        this.options={
+            url:'https://api.integrator.io/v1/flows',
+            headers:{
+                'Authorization':'Bearer {token here}'
+            },
+            json:{}
+        }
+    }
 
-const options={
-    url:'https://api.integrator.io/v1/flows',
-    headers:{
-        'Authorization':'Bearer {token here}'
-    },
-    json:postData
-}
-
-function callback(error,response,body){
+ callback(error,response,body){
     if(!error && response.statusCode ==201){
         console.log(body);
     }
@@ -23,4 +23,13 @@ function callback(error,response,body){
     }
 }
 
-request.post(options,callback);
+create(){
+    var data= fs.readFileSync(this.path);
+    this.options.json=JSON.parse(data);
+    request.post(this.options,callback);
+}
+
+}
+
+var start=new createFlow('{flow path here}');
+start.create();

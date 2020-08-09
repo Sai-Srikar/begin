@@ -1,0 +1,20 @@
+{
+  "name": "integrator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "copyDocs.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.19"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1",
+    "nock": "^13.0.3"
+  }
+}
